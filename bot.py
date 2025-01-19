@@ -53,7 +53,7 @@ async def main():
     register_handler(dp)
 
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_final_message, 'interval', minutes = 1, args=(bot,))
+    scheduler.add_job(send_final_message, 'interval', minutes =2, args=(bot,))
     try:
         scheduler.start()
         await dp.start_polling(bot)

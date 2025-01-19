@@ -24,11 +24,11 @@ class SchedulerSendMessage:
 
     async def send_notification_about_instruction(self):
 
-        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=1),
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=15),
                                kwargs={"type_action": action_remind_instruction})
 
     async def send_notification_about_guide(self):
-        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=1),
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=30),
                                kwargs={"type_action": action_remind_of_guide})
 
 
@@ -47,9 +47,7 @@ class SchedulerSendMessage:
                 await create_action(user_id=user.id, type_action='send_notif_instruction', session=session)
                 self.scheduler.shutdown()
             else:
-                pass
-
-                await create_action(user_id=user.id, type_action='send_final', session=session)
+               pass
         if type_action == action_remind_of_guide:
             if now_state == UserState.get_instruction:
                 await self.bot.send_message(chat_id=self.chat_id, text=notification_about_guide)

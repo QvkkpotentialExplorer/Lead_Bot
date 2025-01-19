@@ -104,7 +104,7 @@ async def send_final_message(bot):
             # Локализуем его в Московскую временную зону
             last_iteration_time_aware = pytz.timezone('Europe/Moscow').localize(last_iteration_time_naive)
             print(last_iteration_time_aware,moscow_tz)
-            if last_iteration_time_aware + timedelta(minutes=1) < moscow_tz:
+            if last_iteration_time_aware + timedelta(minutes=30) < moscow_tz:
                 await bot.send_message(chat_id=now_user.tg_id, text=notification_final_main)
                 await bot.send_message(chat_id=now_user.tg_id, text=notification_final_additional,
                                        reply_markup=end_reply_keyboard)
