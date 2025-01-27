@@ -1,6 +1,8 @@
-notification_of_instruction = 'Ты ещё не забрал инструкцию, а она скоро сгорит! Нажми на кнопку, чтобы успеть.'
-notification_about_guide = "Как тебе гайд? Надеюсь, он был полезен"
-notification_about_guide_additional = 'Кстати, у нас есть бесплатная консультация и список услуг. Выбирай!'
-
-notification_final_main = 'Всё ли тебе понятно? Остались вопросы?'
-notification_final_additional = 'Если что, записывайся на бесплатную консультацию или загляни на страницу с продуктами.'
+notification_of_instruction = 'Понравился гайд? Подпишитесь ' \
+                              'на мой канал и получишь Эксклюзивную инструкцю с дополнительными советами!\nПоверьте, вы не пожалеете\nhttps://t.me/Test_lead_channel '
+second_notification_about_instruction = 'Еще не с нами? Скорее подпишитесь и заберите Эксклюзивную инструкцию! Иначе самое интересное пропустите\nhttps://t.me/Test_lead_channel'
+third_notification_about_instruction = 'Ваша Эксклюзивная инструкция уже ждет вас. Просто подпишитесь на канал!\nhttps://t.me/Test_lead_channel'
+fourth_notification_about_instruction = 'Может быть остались какие-то вопросы? Свяжитесь со мной, давайте вместе разберемся!'
+notification_about_guide = 'Надеюсь гайд получился полезным и увлекательным. Если остались вопросы - получите бесплатную консультацию! '
+first_no_success_user_notification ='Может быть остались какие-то вопросы? Свяжитесь со мной, давайте вместе разберемся!'
+last_notification_no_button_user = 'Если остались вопросы - получите бесплатную консультацию!'

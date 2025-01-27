@@ -9,7 +9,7 @@ from yookassa import Configuration
 
 from config import load_config
 from tg_bot.tg_bott.handlers import start
-from tg_bot.tg_bott.handlers.start import send_final_message
+from tg_bot.tg_bott.scripts import send_thanks_message
 
 # redis_url = config('REDIS_URL')
 
@@ -51,9 +51,9 @@ async def main():
     dp.include_routers(start.router)
     register_filters(dp)
     register_handler(dp)
-
+    #
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(send_final_message, 'interval', minutes =2, args=(bot,))
+    scheduler.add_job(send_thanks_message, 'interval', seconds = 10, args=(bot,))
     try:
         scheduler.start()
         await dp.start_polling(bot)

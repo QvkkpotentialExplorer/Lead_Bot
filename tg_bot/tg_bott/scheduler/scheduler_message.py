@@ -1,57 +1,184 @@
 from datetime import datetime, timedelta
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram.fsm.context import FSMContext
 
-from core.crud import create_action
+import bot
+from core.crud import create_action, get_first_notific, get_user, get_user_by_tg_id, get_second_instruction
 from core.models.db_helper import db_helper
 from state import UserState
-from tg_bot.tg_bott.answers import notification_of_instruction, notification_about_guide, \
-    notification_about_guide_additional, notification_final_main, notification_final_additional
-from tg_bot.tg_bott.keyboards.reply_keyboards import end_reply_keyboard, start_reply_keyboard
+from tg_bot.tg_bott.answers import *
 
-action_remind_instruction = 'action_remind_instruction'
-action_remind_of_guide = 'action_remind_guide'
-action_remind_of_final = 'action_remind_of_final'
+from tg_bot.tg_bott.keyboards.reply_keyboards import start_reply_keyboard, \
+    second_step_reply_keyboard, only_sub_reply_keyboard
 
-
+first_action_remind_instruction = 'first_action_remind_instruction'
+second_action_remind_instruction = 'second_action_remind_instruction'
+third_action_remind_instruction = 'third_action_remind_guide'
+fourth_action_remind_instruction = 'fourth_action_remind_of_final'
+first_notification_about_button = 'first_notification_about_button'
+last_action_remind_button = 'last_action_remind_button'
 class SchedulerSendMessage:
-    def __init__(self, scheduler: AsyncIOScheduler, chat_id: int, state: FSMContext, bot):
+    def __init__(self, scheduler: AsyncIOScheduler, chat_id: int,  bot,state: FSMContext = None):
         self.scheduler = scheduler
         self.chat_id = chat_id
         self.state = state
         self.bot = bot
 
-    async def send_notification_about_instruction(self):
+    async def first_send_notification_about_instruction(self):
 
-        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=15),
-                               kwargs={"type_action": action_remind_instruction})
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=5),
+                               kwargs={"type_action": first_action_remind_instruction})
 
-    async def send_notification_about_guide(self):
-        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=30),
-                               kwargs={"type_action": action_remind_of_guide})
+    async def second_send_notification_about_instruction(self):
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=5),
+                               kwargs={"type_action": second_action_remind_instruction})
 
+    async def third_send_notification_about_instruction(self):
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=5),
+                               kwargs={"type_action": third_action_remind_instruction})
+    async def fourth_send_notification_about_instruction(self):
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=5),
+                               kwargs={"type_action": fourth_action_remind_instruction})
+    async def first_notification_about_success_butoton(self):
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=10),
+                               kwargs={"type_action": first_notification_about_button})
 
-
+    async def last_no_button_user_notification(self):
+        self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=10),
+                               kwargs={"type_action": last_action_remind_button})
     async def send_message(self, type_action):
-        async with db_helper.session_factory() as session:
-            now_state = await self.state.get_state()
+
+        try:
             user = await self.state.get_data()
             user = user['user']
-        if type_action == action_remind_instruction:
-            print('Я туту')
+            async with db_helper.session_factory() as session:
+                now_state = await self.state.get_state()
+                user = await get_user(session=session, user_id=user.id)
+        except:
+            async with db_helper.session_factory() as session:
+                user = await get_user_by_tg_id(session=session, tg_id=self.chat_id)
 
-            if now_state == UserState.get_start:
-                await self.bot.send_message(chat_id=self.chat_id, text=notification_of_instruction,
-                                            reply_markup=start_reply_keyboard)
-                await create_action(user_id=user.id, type_action='send_notif_instruction', session=session)
+
+
+
+
+
+
+
+
+        if type_action == first_action_remind_instruction:
+            if now_state == UserState.get_instruction and user.is_sub==False:
+                sub_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(
+                        text='Хочу бесплатную консультацию',
+                        url=f'https://consult.tylerdurden.eu.org/track/free_consult/{user.tg_id}/')],
+                    [InlineKeyboardButton(
+                        text='Хочу описание',
+                        url=f'https://consult.tylerdurden.eu.org/track/description/{user.tg_id}/')]])
+                await get_first_notific(user=user)
+                print('Я здесь')
+                await self.bot.send_message(chat_id=self.chat_id, text=notification_of_instruction,reply_markup = sub_reply_keyboard)
                 self.scheduler.shutdown()
+
+
+                scheduler = AsyncIOScheduler()
+                scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                              bot=self.bot, state=self.state)
+
+                await scheduler_instructions.second_send_notification_about_instruction()
+                scheduler.start()
+        if type_action == second_action_remind_instruction:
+            if user.send_full==False:
+                await self.bot.send_message(chat_id=self.chat_id, text=second_notification_about_instruction,reply_markup = only_sub_reply_keyboard)
+
+
+                scheduler = AsyncIOScheduler()
+                scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                              bot=self.bot, state=self.state)
+                async with db_helper.session_factory() as session:
+                    await get_second_instruction(user = user,session=session)
+
+                await scheduler_instructions.third_send_notification_about_instruction()
+                scheduler.start()
+
+
+
+        if type_action == first_notification_about_button:
+            sub_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(
+                    text='Хочу бесплатную консультацию',
+                    url=f'https://consult.tylerdurden.eu.org/track/free_consult/{user.tg_id}/')],
+                [InlineKeyboardButton(
+                    text='Хочу описание',
+                    url=f'https://consult.tylerdurden.eu.org/track/description/{user.tg_id}/')]])
+            await self.bot.send_message(chat_id=self.chat_id, text=notification_about_guide,reply_markup =sub_reply_keyboard )
+
+            scheduler = AsyncIOScheduler()
+            scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                          bot=self.bot, state=self.state)
+
+            await scheduler_instructions.last_no_button_user_notification()
+            scheduler.start()
+
+        if type_action == third_action_remind_instruction:
+            print('Я в third_action')
+            sub_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(
+                    text='Хочу бесплатную консультацию',
+                    url=f'https://consult.tylerdurden.eu.org/track/free_consult/{user.tg_id}/')]])
+            if user.send_full == False:
+                await self.bot.send_message(chat_id=self.chat_id, text=third_notification_about_instruction,
+                                            reply_markup=only_sub_reply_keyboard)
+                await self.bot.send_message(chat_id=self.chat_id, text=fourth_notification_about_instruction,reply_markup= sub_reply_keyboard)
+                scheduler = AsyncIOScheduler()
+                scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                              bot=self.bot, state=self.state)
+
+                await scheduler_instructions.last_no_button_user_notification()
+                scheduler.start()
+
             else:
-               pass
-        if type_action == action_remind_of_guide:
-            if now_state == UserState.get_instruction:
-                await self.bot.send_message(chat_id=self.chat_id, text=notification_about_guide)
-                await self.bot.send_message(chat_id=self.chat_id, reply_markup=end_reply_keyboard,
-                                            text=notification_about_guide_additional)
-                await create_action(user_id=user.id, type_action='send_notif_guide', session=session)
-                self.scheduler.shutdown()
+                pass
+
+
+        if type_action == fourth_action_remind_instruction:
+            if user.is_first_instruction == True and user.send_full == False:
+
+                await self.bot.send_message(chat_id=self.chat_id, text=third_notification_about_instruction,reply_markup = only_sub_reply_keyboard)
+                scheduler = AsyncIOScheduler()
+                scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                              bot=self.bot, state=self.state)
+                await scheduler_instructions.last_no_button_user_notification()
+                free_cons_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(
+                    text='Хочу бесплатную консультацию',
+                    url=f'https://consult.tylerdurden.eu.org/task/free_consult/{user.tg_id}/')]])
+                await self.bot.send_message(chat_id=self.chat_id, text=fourth_notification_about_instruction,
+                                            reply_markup=free_cons_reply_keyboard)
+
+                scheduler = AsyncIOScheduler()
+                scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=self.chat_id,
+                                                              bot=self.bot, state=self.state)
+
+                await scheduler_instructions.last_no_button_user_notification()
+                scheduler.start()
+
+
+
+
+        if type_action == last_action_remind_button:
+            if user.send_full == False:
+                sub_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(
+                        text='Хочу бесплатную консультацию',
+                        url=f'https://consult.tylerdurden.eu.org/track/free_consult/{user.tg_id}/')],
+                    [InlineKeyboardButton(
+                        text='Хочу описание',
+                        url=f'https://consult.tylerdurden.eu.org/track/description/{user.tg_id}/')]])
+                await self.bot.send_message(chat_id = self.chat_id,text = last_notification_no_button_user,reply_markup = sub_reply_keyboard )
+            else:
+                pass
+    # async def first_remind_sub(self):
+    #     self.scheduler.add_job(self.send_message, 'date', run_date=datetime.now() + timedelta(minutes=30),
+    #                            kwargs={"type_action": action_remind_of_guide})

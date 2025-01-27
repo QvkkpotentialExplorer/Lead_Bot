@@ -16,6 +16,7 @@ class Db_Config:
     password: str
     usr: str
     Database: str
+    path:str
 
 
 @dataclass
@@ -39,6 +40,7 @@ def load_config(path: str = None):
     env = Env()
     # print(env.read_env(path=path))
     # print('999999999')
+
     env.read_env(path=path)
     return Config_py(
         tg_bot=TgBot(token=env.str('BOT_TOKEN'),
@@ -47,5 +49,6 @@ def load_config(path: str = None):
         db=Db_Config(host=env.str('DB_HOST'),
                      password=env.str('DB_PASSWORD'),
                      usr=env.str('DB_USER'),
-                     Database=env.str('DATA_BASE')),
+                     Database=env.str('DATA_BASE'),
+                     path=env.str('DB_PATH')),
         misc=Miscellaneous())
