@@ -7,7 +7,7 @@ start_reply_keyboard = InlineKeyboardMarkup(
 second_step_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 [InlineKeyboardButton(
         text='Подписаться и получить Эксклюзивную инструкцию',
-        url='https://t.me/Test_lead_channel')],
+        url='https://t.me/dorogov_ntofficial')],
     [InlineKeyboardButton(
         text='Хочу бесплатную консультацию',
         url=f'https://consult.tylerdurden.eu.org/task/free_consult//')],
@@ -18,8 +18,8 @@ second_step_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[
 ])
 
 only_sub_reply_keyboard = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(
-        text='Подписаться и получить Эксклюзивную инструкцию',
-        url='https://t.me/Test_lead_channel')]])
+        text='Получить Эксклюзивную инструкцию',
+        url='https://t.me/dorogov_ntofficial')]])
 
 
 strr = 'https://t.me/neurotipology_warrior'#консультация

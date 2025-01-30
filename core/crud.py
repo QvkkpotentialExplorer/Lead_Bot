@@ -97,7 +97,10 @@ async def user_get_first_instructions(session:AsyncSession,user):
 
     await session.execute(stmt)
     await session.commit()
-
+async def get_last_user_action(user,session:AsyncSession):
+    actions = select(Action).where(User.id == user.id)
+    actions = await session.execute(actions)
+    return actions.all()[-1]
 async def get_user(session:AsyncSession,user_id):
     user = select(User).where(User.id == user_id)
     user = await session.execute(user)
@@ -126,10 +129,11 @@ async def get_description(user):
         await session.commit()
 
 
-async def get_second_instruction(session:AsyncSession,user):
-    stmt = (update(User).where(User.id == user.id).values(send_second_notification=True))
-    await session.execute(stmt)
-    await session.commit()
+async def get_second_instruction(user):
+    async with db_helper.session_factory() as session:
+        stmt = (update(User).where(User.id == user.id).values(send_second_notification=True))
+        await session.execute(stmt)
+        await session.commit()
 #функция проверки перешл ли пользователь по сслыки описания или бесплатной консультации
 async def check_activity(user):
     print(user)
@@ -153,3 +157,9 @@ async def user_list_for_thanks(session:AsyncSession):
 ))
     user = await session.execute(user)
     return user.all()
+
+
+async def get_new_user(user,session:AsyncSession):
+    stmt = (update(User).where(User.id == user.id).values(send_second_notification =False,send_notification = False,send_full = False,is_sub = False ))
+    await session.execute(stmt)
+    await session.commit()

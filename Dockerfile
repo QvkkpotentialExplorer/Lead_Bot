@@ -1,6 +1,13 @@
 FROM python:3.11
-RUN mkdir /usr/src/app/
-WORKDIR /usr/app/app
-COPY Lead_Bot/tg_bot/tg_bott /usr/src/app
-RUN pip install -r requirements.txt
+
+# Создаем директорию /lb и устанавливаем её как рабочую
+WORKDIR /lb
+
+# Копируем файлы проекта в рабочую директорию контейнера
+COPY . .
+
+# Устанавливаем зависимости из requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Запускаем бота
 CMD ["python", "bot.py"]

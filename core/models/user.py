@@ -14,6 +14,7 @@ class User(Base):
     send_notification = mapped_column(Boolean,default=False)
     send_second_notification = mapped_column(Boolean,default=False)
     is_first_instruction = mapped_column(Boolean,default=False)
+
     get_consult =  mapped_column(Boolean,default=False)
     get_free_consult = mapped_column(Boolean,default=False)
     get_free_description = mapped_column(Boolean,default=False)

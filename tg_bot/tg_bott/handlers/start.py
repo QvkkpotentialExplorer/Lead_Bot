@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from datetime import datetime, timedelta
 from core.crud import create_user, create_action, get_last_iteration, get_instuct_user, get_full_instruct_user, \
     users_for_sub, user_get_first_instructions, get_first_notific, check_activity, delete_user, \
-    get_user_by_tg_id_for_app, user_list_for_thanks
+    get_user_by_tg_id_for_app, user_list_for_thanks, get_new_user, get_user, get_user_by_tg_id
 from core.models.db_helper import db_helper
 from google_api import GoogleSheetApi
 from google_api_config import service, user_spreadsheet_id, user_spreadsheet_action_id
@@ -22,45 +22,49 @@ import aiogram.utils.markdown as fmt
 
 router = Router()
 
-CHANNEL_ID = -1002262522789
-
+CHANNEL_ID = -1002243326484
 
 @router.message(Command('start'))
 async def start(message: types.Message, state: FSMContext):
     now_state = await state.get_state()
     await message.answer('Готовы забрать инструкцию?',
                          reply_markup=start_reply_keyboard)
+    async with db_helper.session_factory() as session:
+        user = await create_user(tg_id=message.chat.id, phone='',
+                                 username=message.from_user.username,
+                                 account_url=f'https://t.me/{message.from_user.username}', session=session)
+    async with db_helper.session_factory() as session:
+        await get_new_user(user=user, session=session)
 
-    if now_state == None:
-        print('Я здесть')
-        async with db_helper.session_factory() as session:
+    print('Я здесть')
 
-            user = await create_user(tg_id=message.chat.id, phone='',
-                                     username=message.from_user.username,
-                                     account_url=f'https://t.me/{message.from_user.username}', session=session)
 
-        await state.set_state(UserState.get_start)
-        print(user)
-        await state.update_data(user=user)
+
+    await state.set_state(UserState.get_start)
+    print(user)
+    await state.update_data(user=user)
         # scheduler = AsyncIOScheduler()
         # scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=message.chat.id, bot=message.bot,
         #                                               state=state)
         # scheduler.start()
 
         # await scheduler_instructions.send_notification_about_instruction()
-    else:
-        user = await state.get_data()
-        user = user['user']
 
-        async with db_helper.session_factory() as session:
-            action = await create_action(type_action='click_start', user_id=user.id, session=session)
+    async with db_helper.session_factory() as session:
+        action = await create_action(type_action='click_start', user_id=user.id, session=session)
 
 
 @router.callback_query(F.data == 'instruc')
 async def get_first_instructions(call: types.CallbackQuery, state: FSMContext):
-    user = await state.get_data()
-    print(user)
-    user = user['user']
+    try:
+        user = await state.get_data()
+        user = user['user']
+        async with db_helper.session_factory() as session:
+            now_state = await state.get_state()
+            user = await get_user(session=session, user_id=user.id)
+    except:
+        async with db_helper.session_factory() as session:
+            user = await get_user_by_tg_id(session=session, tg_id=call.chat_id)
 
     async with db_helper.session_factory() as session:
         # action = await create_action(type_action='click_get_instruction', user_id=user.id, session=session)
@@ -76,20 +80,22 @@ async def get_first_instructions(call: types.CallbackQuery, state: FSMContext):
         media = [InputMediaDocument(media=second_file,
                                     caption='Спасибо за проявленный интерес к моему каналу. Вот ваш Эксклюзивный гайд')]
         await call.bot.send_media_group(media=media, chat_id=user.tg_id)
-        await call.answer()
+
         async with db_helper.session_factory() as session:
             await get_full_instruct_user(session=session, user_id=user.id)
         scheduler = AsyncIOScheduler()
 
         scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=call.message.chat.id,
                                                       bot=call.message.bot, state=state)
+        print("Аээээээээээээээээээээээээээээээээээээээээ")
 
-        await scheduler_instructions.first_notification_about_success_butoton()
+        await scheduler_instructions.send_for_pred_sub()
+        scheduler.start()
     else:
         # Загружаем файл
         file_to_send = FSInputFile(file_path)
 
-        # Отправка файла пользователю
+        # Отгыук = правка файла пользователю
         await call.message.bot.send_document(chat_id=user.tg_id,
                                              document=file_to_send,
                                              caption="Вот ваша инструкция!")
@@ -99,7 +105,7 @@ async def get_first_instructions(call: types.CallbackQuery, state: FSMContext):
 
         scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=call.message.chat.id,
                                                       bot=call.message.bot, state=state)
-
+        print('Я  В INSTRUC')
         await scheduler_instructions.first_send_notification_about_instruction()
         scheduler.start()
         await state.update_data(user=user)
@@ -153,6 +159,14 @@ async def on_user_join(event: types.ChatMemberUpdated):
                     await event.bot.send_document(chat_id=now_user.tg_id,
                                                   document=file_to_send,
                                                   caption=caption)
+                    scheduler = AsyncIOScheduler()
+
+                    scheduler_instructions = SchedulerSendMessage(scheduler=scheduler, chat_id=now_user.tg_id,
+                                                                  bot=bot)
+                    print("Аээээээээээээээээээээээээээээээээээээээээ")
+
+                    await scheduler_instructions.send_for_pred_sub()
+                    scheduler.start()
 
 
                 if flag_activity:
@@ -176,4 +190,4 @@ async def on_user_join(event: types.ChatMemberUpdated):
 async def check_sub(chat_id, channel_chat_id, bot):
     member = await bot.get_chat_member(chat_id=channel_chat_id, user_id=chat_id)
 
-    return member.status == 'member'
+    return member.status == 'member' or member.status == "creator" or member.status == "administrator"
